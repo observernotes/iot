@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "rpio": "^0.9.17",
     "serialport": "^5.0.0",
     "superagent": "^3.6.0"
   }
