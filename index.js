@@ -1,33 +1,30 @@
-// var rpio = require('rpio');
+var rpio = require('rpio');
 var process = require('child_process');
 var request = require('superagent');
-// rpio.open(11, rpio.INPUT);
+rpio.open(11, rpio.INPUT);
+initFace();
 
-var faceLastState = 0;
-
-while (true) {
-    var faceValue = rpio.read(11);
-    if (faceValue !== faceLastState && faceValue === 1) {
-        break;
-    }
-    faceLastState = faceValue;
-    rpio.msleep(200);
+function initFace() {
+    var faceLastState = 0;
+    setInterval(() => {
+        var faceValue = rpio.read(11);
+        if (faceValue !== faceLastState && faceValue === 1) {
+            toggleFace();
+        }
+        faceLastState = faceValue;
+    }, 150);
 }
-console.log('video on and loading...');
-toggleFace();
-sendToServer();
 
 function toggleFace() {
-    process.exec('raspivid -o facevideo.h264 -t 5000', function(error, stdout, stderr) {
-        console.log('video loaded amd uploaded.');
+    console.log('video on and loading...');
+    process.exec('raspivid -o facevideo.h264 -t 4000', function(error, stdout, stderr) {
+        console.log('video loaded and saved.');
+        sendToServer();
     });
 }
-toggleFace();
-sendToServer();
 
 function sendToServer() {
-    console.log('ready to upload');
-    request.post('http://30.131.35.131:3000/faceMatch').send({ command: 'face detect', data: {} }).end(function(err, res) {
-        console.log('ready to upload');
+    request.post('http://120.27.19.195/faceMatch').send({ command: 'face detect', data: {} }).end((err, res) => {
+        console.log('upload face video success');
     });
 }
