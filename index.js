@@ -17,7 +17,10 @@ function initFace() {
 
 function toggleFace() {
     console.log('video on and loading...');
-    process.exec('raspivid -o facevideo.h264 -t 4000', function(error, stdout, stderr) {
+	request.post('http://120.27.19.195/faceDetect').send({ command: 'face detect', data: {} }).end((err, res) => {
+        	console.log('start face detect');
+    	});
+    process.exec('raspivid -o facevideo.h264 -t 7000', function(error, stdout, stderr) {
         console.log('video loaded and saved.');
         sendToServer();
     });

@@ -1,5 +1,6 @@
 const request = require('superagent');
 const SerialPort = require('serialport');
+var WebSocket = require('ws');
 const PRESET_VALUE = 0xFFFF;
 const POLYNOMIAL = 0x8408;
 const commandList = {
@@ -58,7 +59,7 @@ function parseDataCmd3(dataField) {
     return dataField;
 }
 
-const port = new SerialPort('/dev/tty.SLAB_USBtoUART', {
+const port = new SerialPort('/dev/ttyUSB0', {
     baudRate: 57600,
     dataBits: 8,
     stopBits: 1,
@@ -183,7 +184,8 @@ port.on('error', function(err) {
     console.log('Error: ', err.message);
 });
 
-let dataList = [];
+let dataList = [],
+    timer;
 port.on('data', data => {
     // console.info(`数据接受成功:${data.toString('hex')}`);
     const result = parseResponse(data);
@@ -194,15 +196,16 @@ port.on('data', data => {
     console.log(parsedData.length && dataList.indexOf(parsedData[0]) < 0)
     if (parsedData.length && dataList.indexOf(parsedData[0]) < 0) {
         dataList = dataList.concat(parsedData);
-        request.get('http://120.27.19.195/additem').end((res) => {
-
-        })
+        request.get('http://120.27.19.195/putItem').end((res) => {});
+	clearInterval(timer)
     }
     resolve(result)
 });
 
 function query() {
-    sendCommand('0x01', { data: [] });
+    timer = setInterval(() => {
+	sendCommand('0x01', { data: [] });
+    }, 200)
 }
 
 function readData(cardId = '1234') {
@@ -215,6 +218,20 @@ function writeDataTest(cardId = '1234', data = '') {
     return result;
 }
 
-setInterval(() => {
-    query()
-}, 1000)
+function initRfidCard() {
+	
+	var ws = new WebSocket('ws://120.27.19.195');
+	ws.on('open', function open(){
+		console.log('Rfid observer is opened.');
+	});
+	ws.on('message', function(message) {
+		console.log(message, 'message');
+		const obj = JSON.parse(message);
+		if (obj.type == 'init') {
+			dataList = [];
+			query();	
+		}
+	});
+}
+initRfidCard();
+query();
